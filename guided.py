@@ -11,9 +11,8 @@ def my_hash(s):
     total += b
     total &= 0xffffffff  # add this for a 32-bit hashing function
     #total &= 0xffffffffffffffff  # add this for a 64-bit hashing function
-  ​
   return total
-​
+
 def get_index(s):
   h = my_hash(s)
   ​

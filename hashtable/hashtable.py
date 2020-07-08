@@ -9,13 +9,13 @@ class HashTableEntry:
 
     def find(self, key):
         if self.key == key:
-            return (self, self.value)
+            return (self)
         else:
             cur = self
             while (cur.next):
                 cur = cur.next
                 if cur.key == key:
-                    return (cur, cur.value)
+                    return (cur)
             return None
 
 
@@ -23,10 +23,17 @@ class HashTableEntry:
         # return the node matching with the matching key
         found = self.find(key)
         if (found):
-            (node, value) = found
-            return value
+            return found.value
         else:
             return None
+
+    def get_all(self):
+        cur = self
+        result = [cur]
+        while (cur.next):
+            cur = cur.next
+            result.append(cur)
+        return result
 
 
     def put(self, key, value):
@@ -35,33 +42,32 @@ class HashTableEntry:
         if cur.key == key:
             found = cur
 
-        while (found is None and cur.next):
+        while (found == None and cur.next):
             cur = cur.next
             if cur.key == key:
                 found = cur
 
-        if (found is not None):
+        if (found != None):
             found.value = value
         else:
             cur.next = HashTableEntry(key, value)
 
     def delete(self, key):
         # return a tuple of (deleted value, new head)
-        prev = None
-        cur = self
-        found = None
-        if cur.next is None:
-            if cur.key == key:
-                return (cur.value, None)
-            else:
-                raise 'No matching key found'
+        if self.key == key:
+            return (self)
+        else:
+            cur = self
+            prev = None
+            found = None
+            while (not found and cur.next):
+                prev = cur
+                cur = cur.next
+                if cur.key == key:
+                    found = cur
+                    prev.next = cur.next
 
-        while (not found and cur.next):
-            prev = cur
-            cur = cur.next
-
-        if cur.key == key:
-            found = cur
+            return found
 
 
     def __len__(self):
@@ -89,8 +95,9 @@ class HashTable:
         if capacity < MIN_CAPACITY:
             capacity = MIN_CAPACITY
         self.capacity = capacity
-        self.data = [None] * capacity
-        self.total_keys = 0 # increment on insert
+        self.data = [None] * self.capacity
+        # self.total_keys = 0 
+        self.keys = 0 # increment on insert
         self.ops_since_recalc = 0
 
 
@@ -101,17 +108,24 @@ class HashTable:
         but the number of slots in the main list.)
 
         One of the tests relies on this.
-
-        Implement this.
         """
-        return len(self.data)
+        return len(self.data) # should be same as self.capacity
+        # total_keys = 0
+        # for item in self.data:
+        #     if item:
+        #         total_keys += 1
+
+        # return total_keys
+        # return self.total_keys
 
 
     def get_load_factor(self):
         """
         Return the load factor for this hash table.
         """
-        return round(self.total_keys / self.capacity)
+        return round(self.keys / self.capacity)
+        # return round(self.get_num_slots() / self.capacity)
+        # should store self.keys
         # total_keys = 0
         # for item in self.data:
         #     if item:
@@ -164,7 +178,7 @@ class HashTable:
         idx = self.hash_index(key)
         slot = self.data[idx]
         if slot:
-            slot.add(key, value)
+            slot.put(key, value)
         else:
             self.data[idx] = HashTableEntry(key, value)
 
@@ -173,11 +187,21 @@ class HashTable:
         Remove the value stored with the given key.
 
         Print a warning if the key is not found.
-
-        Implement this.
         """
-        # Your code here
-        pass
+        idx = self.hash_index(key)
+        node = self.data[idx]
+        if node:
+            if node.key == key:
+                self.data[idx] = None
+            else:
+                # run delete on linked-list
+                node = node.delete(key)
+
+        if node:
+            return node.value
+        else:
+            print('key not found')
+            return None
 
 
     def get(self, key):
@@ -185,22 +209,29 @@ class HashTable:
         Retrieve the value stored with the given key.
 
         Returns None if the key is not found.
-
-        Implement this.
         """
-        # Your code here
-        pass
+        idx = self.hash_index(key)
+        node = self.data[idx]
+        if node:
+            return node.get(key)
+        else:
+            return None
 
 
     def resize(self, new_capacity):
         """
         Changes the capacity of the hash table and
         rehashes all key/value pairs.
-
-        Implement this.
         """
-        # Your code here
-        pass
+        old_data = self.data
+        if new_capacity < MIN_CAPACITY:
+            new_capacity = MIN_CAPACITY
+        self.data = [None] * new_capacity
+
+        for node in enumerate(old_data):
+            if node:
+                for item in enumerate(node.get_all()):
+                    self.put(item.key, item.value)
 
 
 
