@@ -1,3 +1,8 @@
+'''
+
+
+'''
+
 class HashTableEntry:
     """
     Linked List hash table key/value pair
@@ -18,39 +23,23 @@ class HashTableEntry:
                     return (cur)
             return None
 
+    def add(self, key, value):
+        cur = self
+        while (cur.next):
+            cur = cur.next
+        tail = HashTableEntry(key, value)
+        cur.next = tail
 
-    def get(self, key):
-        # return the node matching with the matching key
-        found = self.find(key)
-        if (found):
-            return found.value
-        else:
-            return None
 
     def get_all(self):
+        result = []
         cur = self
-        result = [cur]
+        result.append(cur)
         while (cur.next):
             cur = cur.next
             result.append(cur)
         return result
 
-
-    def put(self, key, value):
-        found = None
-        cur = self
-        if cur.key == key:
-            found = cur
-
-        while (found == None and cur.next):
-            cur = cur.next
-            if cur.key == key:
-                found = cur
-
-        if (found != None):
-            found.value = value
-        else:
-            cur.next = HashTableEntry(key, value)
 
     def delete(self, key):
         # return a tuple of (deleted value, new head)
@@ -99,7 +88,25 @@ class HashTable:
         # self.total_keys = 0 
         self.keys = 0 # increment on insert
         self.ops_since_recalc = 0
+        self.is_resizing = False
 
+    def inc_keys(self):
+        self.keys += 1
+        # auto-resize
+        if (self.get_load_factor() > 0.7):
+            self.resize(int(self.capacity * 2))
+        # self.ops_since_recalc += 1
+        # if (self.ops_since_recalc > 1):
+        #     if (self.get_load_factor() > 0.7):
+        #         self.resize(self.capacity * 2)
+
+
+    def dec_keys(self):
+        self.keys -= 1
+        if (self.get_load_factor() < 0.2):
+            self.resize(int(self.capacity / 2))
+
+        # self.ops_since_recalc += 1
 
     def get_num_slots(self):
         """
@@ -109,21 +116,14 @@ class HashTable:
 
         One of the tests relies on this.
         """
-        return len(self.data) # should be same as self.capacity
-        # total_keys = 0
-        # for item in self.data:
-        #     if item:
-        #         total_keys += 1
-
-        # return total_keys
-        # return self.total_keys
+        return len(self.data)
 
 
     def get_load_factor(self):
         """
         Return the load factor for this hash table.
         """
-        return round(self.keys / self.capacity)
+        return self.keys / self.capacity
         # return round(self.get_num_slots() / self.capacity)
         # should store self.keys
         # total_keys = 0
@@ -167,38 +167,55 @@ class HashTable:
         Take an arbitrary key and return a valid integer index
         between within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
-        return self.djb2(key) % self.capacity
+        return self.fnv1(key) % self.capacity
+        # return self.djb2(key) % self.capacity
 
     def put(self, key, value):
         """
         Store the value with the given key.
         Hash collisions should be handled with Linked List Chaining.
         """
+        # PERFECT
         idx = self.hash_index(key)
         slot = self.data[idx]
         if slot:
-            slot.put(key, value)
+            node = slot.find(key)
+            if node:
+                node.value = value
+            else:
+                slot.add(key, value)
+                self.inc_keys()
         else:
             self.data[idx] = HashTableEntry(key, value)
+            self.inc_keys()
+
 
     def delete(self, key):
         """
         Remove the value stored with the given key.
-
         Print a warning if the key is not found.
         """
+        # WIP
         idx = self.hash_index(key)
-        node = self.data[idx]
-        if node:
-            if node.key == key:
-                self.data[idx] = None
+        cur = self.data[idx]
+        found = None
+        if cur:
+            if cur.key == key:
+                found = cur
+                self.data[idx] = cur.next
             else:
-                # run delete on linked-list
-                node = node.delete(key)
+                prev = None
+                while (not found and cur.next):
+                    prev = cur
+                    cur = cur.next
+                    if cur.key == key:
+                        found = cur
+                        prev.next = cur.next
+                        cur.next = None # not needed
 
-        if node:
-            return node.value
+        if found:
+            self.dec_keys()
+            return found.value
         else:
             print('key not found')
             return None
@@ -210,10 +227,15 @@ class HashTable:
 
         Returns None if the key is not found.
         """
+        # PERFECT
         idx = self.hash_index(key)
-        node = self.data[idx]
-        if node:
-            return node.get(key)
+        slot = self.data[idx]
+        found = None
+        if slot:
+            found = slot.find(key)
+
+        if found:
+            return found.value
         else:
             return None
 
@@ -223,16 +245,19 @@ class HashTable:
         Changes the capacity of the hash table and
         rehashes all key/value pairs.
         """
-        old_data = self.data
-        if new_capacity < MIN_CAPACITY:
-            new_capacity = MIN_CAPACITY
-        self.data = [None] * new_capacity
+        if not self.is_resizing:
+            self.is_resizing = True
+            old_data = self.data
+            if new_capacity < MIN_CAPACITY:
+                new_capacity = MIN_CAPACITY
+            self.data = [None] * new_capacity
 
-        for node in enumerate(old_data):
-            if node:
-                for item in enumerate(node.get_all()):
-                    self.put(item.key, item.value)
-
+            for slot in old_data:
+                if slot:
+                    nodes = slot.get_all()
+                    for item in nodes:
+                        self.put(item.key, item.value)
+            self.is_resizing = False
 
 
 if __name__ == "__main__":
