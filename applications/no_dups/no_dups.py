@@ -1,5 +1,18 @@
 def no_dups(s):
-    # Your code here
+    arr = s.split(' ') 
+    dupes = {}
+    result = []
+    for v in arr:
+    # for _, v in enumerate(arr):
+        if v not in dupes:
+            # if v != '':
+            #     result += ''
+            result.append(v)
+            dupes[v] = 1
+        else:
+            dupes[v] += 1
+
+    return ' '.join(result)
 
 
 
