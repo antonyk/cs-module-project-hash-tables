@@ -1,6 +1,12 @@
-def word_count(s):
-    # Your code here
 
+
+def word_count(s):
+    counts = {}
+    
+
+
+    maketrans
+    s.translate(maketrans())
 
 
 if __name__ == "__main__":

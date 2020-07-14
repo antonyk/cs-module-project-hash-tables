@@ -2,7 +2,22 @@
 
 
 def expensive_seq(x, y, z):
-    # Your code here
+    cache = {}
+
+    def exps(x, y, z):
+        # base case
+        if x <= 0:
+            return y + z
+        # recursive
+        else:
+            key = f'{x},{y},{z}'
+            v = cache.get(key)
+            if not v:
+                v = exps(x-1,y+1,z) + exps(x-2,y+2,z*2) + exps(x-3,y+3,z*3)
+                cache[key] = v
+            return v
+
+    return exps(x, y, z)
 
 
 

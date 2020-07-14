@@ -27,7 +27,7 @@ def slowfun(x, y):
     output, but completes quickly instead of taking ages to run.
     """
     key = f'{x},{y}'
-    v = cache[key]
+    v = cache.get(key)
     if not v:
         v = math.pow(x, y)
         v = math.factorial(v)
